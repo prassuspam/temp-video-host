@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: whatifly-daily-video
@@ -46,7 +47,16 @@ jobs:
         if: ${{ steps.guard.outputs.skip != 'true' }}
         id: render
         run: |
-          python automation/render.py > /tmp/episode.json
+          if ! python automation/render.py > /tmp/episode.json 2> /tmp/render-error.txt; then
+            if grep -q "PREMISES_EXHAUSTED" /tmp/render-error.txt; then
+              if ! gh issue list --state open --search "What If premise bank exhausted" --json number --jq 'length > 0' | grep -q true; then
+                gh issue create --title "What If premise bank exhausted" --body "The renderer used all three researched premises and stopped rather than repeating one. Ask Codex to add and fact-check more premises."
+              fi
+              exit 1
+            fi
+            cat /tmp/render-error.txt
+            exit 1
+          fi
           cat /tmp/episode.json
           echo "video=$(python -c 'import json; print(json.load(open("/tmp/episode.json"))["video"])')" >> "$GITHUB_OUTPUT"
           echo "title=$(python -c 'import json; print(json.load(open("/tmp/episode.json"))["title"])')" >> "$GITHUB_OUTPUT"
@@ -65,7 +75,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "$VIDEO_PATH" "$REPORT_DIR/report.json" "$REPORT_DIR/episode.json" "$REPORT_DIR/storyboard.jpg"
+          git add "$VIDEO_PATH" "$REPORT_DIR/report.json" "$REPORT_DIR/episode.json" "$REPORT_DIR/storyboard.jpg" automation/used-premises.json
           git commit -m "Render daily What If episode"
           git push origin HEAD:main
           REPO_PATH="${VIDEO_PATH#./}"
