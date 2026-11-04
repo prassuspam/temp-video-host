@@ -17,7 +17,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 W, H, FPS, SECONDS = 1140, 360, 20, 19
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 DAY = dt.datetime.now(dt.timezone.utc).astimezone(
     dt.timezone(dt.timedelta(hours=5, minutes=30))
 ).date()
