@@ -1,11 +1,7 @@
-# WhatiflyHQ temporary video host
+# WhatiflyHQ daily video pipeline
 
-This public repository contains the source for a free, manual-only daily What If rendering and publishing pipeline. GitHub Actions renders an episode locally on its hosted runner using Pillow, espeak-ng, and FFmpeg. The Make scenario then downloads a temporary MP4, schedules the upload to YouTube at 6:00 PM Asia/Kolkata, removes the MP4 from `main`, and checks that the file is absent.
+This public repository runs a free daily What If rendering and publishing pipeline. GitHub Actions renders each episode on a hosted runner with Pillow, espeak-ng, and FFmpeg. The Make scenario downloads the temporary MP4 and schedules the YouTube upload for 6:00 PM Asia/Kolkata; after Make confirms success, GitHub Actions removes the MP4 from `main` and verifies it is absent.
 
-## One-time setup
-1. In GitHub Actions repository secrets, add `MAKE_WEBHOOK_URL` with the webhook URL from the Make scenario.
-2. After the renderer is verified, enable its 9:00 AM Asia/Kolkata schedule.
+The daily workflow starts at 9:00 AM Asia/Kolkata. The `MAKE_WEBHOOK_URL` is stored as a repository Actions secret and must never be committed.
 
-The workflow is manual-only until the secret and final checks are completed. Never commit the webhook URL or credentials.
-
-The requested 19:6 output is widescreen, so YouTube classifies it as a regular video rather than a Short. The episode metadata still carries `#shorts` as requested.
+The requested 19:6 output is widescreen, so YouTube classifies it as a regular video rather than a Short. Episode metadata still carries `#shorts` as requested.
