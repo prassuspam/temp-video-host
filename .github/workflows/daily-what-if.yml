@@ -2,6 +2,8 @@ name: Daily What If video
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '30 3 * * *'
 
 permissions:
   contents: write
@@ -66,7 +68,7 @@ jobs:
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/${REPO_PATH}?ref=main" | jq -r .sha)
           test -n "$sha" -a "$sha" != null || { echo "Could not read temporary MP4 blob SHA"; exit 1; }
           echo "file_sha=$sha" >> "$GITHUB_OUTPUT"
-      - name: Hand off to Make for scheduled YouTube upload
+      - name: Hand off to Make, then remove the temporary MP4
         env:
           MAKE_WEBHOOK_URL: ${{ secrets.MAKE_WEBHOOK_URL }}
           VIDEO_URL: ${{ steps.push.outputs.raw_url }}
@@ -77,6 +79,7 @@ jobs:
           TAGS: ${{ steps.render.outputs.tags }}
           SLUG: ${{ steps.render.outputs.slug }}
           PUBLISH_AT: ${{ steps.render.outputs.publish_at }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           test -n "$MAKE_WEBHOOK_URL" || { echo "Set the MAKE_WEBHOOK_URL repository Actions secret first."; exit 1; }
           jq -n \
@@ -86,7 +89,27 @@ jobs:
             --arg publish_at "$PUBLISH_AT" --argjson tags "$TAGS" \
             '{video_url:$video_url, repo_file_path:$repo_file_path, file_sha:$file_sha, title:$title, description:$description, episode_slug:$episode_slug, publish_at:$publish_at, tags:$tags}' \
             > /tmp/handoff.json
-          curl --fail --silent --show-error --max-time 30 \
+          response=$(curl --fail --silent --show-error --max-time 180 \
             -H 'Content-Type: application/json' \
-            --data-binary @/tmp/handoff.json "$MAKE_WEBHOOK_URL"
-
+            --data-binary @/tmp/handoff.json "$MAKE_WEBHOOK_URL")
+          echo "$response"
+          test "$(echo "$response" | jq -r .status)" = scheduled || { echo "Make did not confirm YouTube scheduling."; exit 1; }
+          video_id=$(echo "$response" | jq -r .video_id)
+          test -n "$video_id" -a "$video_id" != null || { echo "Make did not return a YouTube video id."; exit 1; }
+          delete_code=$(curl --silent --output /dev/null --write-out '%{http_code}' -X DELETE \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            --data "$(jq -n --arg sha "$FILE_SHA" '{message:"Remove temporary MP4 after YouTube scheduling",sha:$sha,branch:"main"}')" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/${FILE_PATH}")
+          test "$delete_code" = 200 || { echo "GitHub delete failed: HTTP $delete_code"; exit 1; }
+          for attempt in $(seq 1 10); do
+            code=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/${FILE_PATH}?ref=main")
+            if [ "$code" = 404 ]; then break; fi
+            sleep 2
+          done
+          test "$code" = 404 || { echo "Temporary MP4 still exists: HTTP $code"; exit 1; }
+          echo "Scheduled YouTube video $video_id; temporary MP4 deletion verified."
