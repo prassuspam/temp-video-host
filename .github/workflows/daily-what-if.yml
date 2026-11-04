@@ -2,6 +2,9 @@ name: Daily What If video
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - README.md
   schedule:
     - cron: '30 3 * * *'
 
@@ -39,7 +42,12 @@ jobs:
           echo "description=$(python -c 'import json; print(json.load(open("/tmp/episode.json"))["description"])')" >> "$GITHUB_OUTPUT"
           echo "slug=$(python -c 'import json; print(json.load(open("/tmp/episode.json"))["slug"])')" >> "$GITHUB_OUTPUT"
           echo "tags=$(python -c 'import json; print(json.dumps(json.load(open("/tmp/episode.json"))["tags"]))')" >> "$GITHUB_OUTPUT"
-          echo "publish_at=$(TZ=Asia/Kolkata date '+%Y-%m-%dT18:00:00+05:30')" >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            publish_at=$(TZ=Asia/Kolkata date -d "+2 days" '+%Y-%m-%dT18:00:00+05:30')
+          else
+            publish_at=$(TZ=Asia/Kolkata date '+%Y-%m-%dT18:00:00+05:30')
+          fi
+          echo "publish_at=$publish_at" >> "$GITHUB_OUTPUT"
           echo "report_dir=outputs/$(TZ=Asia/Kolkata date +%F)" >> "$GITHUB_OUTPUT"
       - name: Push temporary MP4 and keep episode report
         id: push
