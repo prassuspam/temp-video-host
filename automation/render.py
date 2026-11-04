@@ -186,7 +186,12 @@ def draw_scene(episode: dict, scene: int, local_frame: int) -> Image.Image:
 def main() -> None:
     ordinal = DAY.toordinal()
     rng = random.Random(ordinal)
-    ep = dict(rng.choice(EPISODES))
+    state_path = ROOT / "automation" / "used-premises.json"
+    used = set(json.loads(state_path.read_text(encoding="utf-8"))) if state_path.exists() else set()
+    available = [item for item in EPISODES if item["slug"] not in used]
+    if not available:
+        raise SystemExit("PREMISES_EXHAUSTED: all researched premises have been used")
+    ep = dict(rng.choice(available))
     ep["place"] = rng.choice(PLACES)
     if ep["slug"] == "sunlight-pauses":
         ep["narration"] = ep["narration"].replace("above the city", f"over {ep['place']}")
@@ -246,6 +251,8 @@ def main() -> None:
     (OUT / "episode.json").write_text(json.dumps(ep, indent=2), encoding="utf-8")
     report = {"date":DAY.isoformat(),"slug":ep["slug"],"title":ep["title"],"duration_seconds":round(duration,2),"dimensions":f"{video['width']}x{video['height']}","aspect_ratio":"19:6","word_count":words,"storyboard_check":"passed","sound_check":"voice track present; normalized to -14 LUFS target and -1 dBTP ceiling","master_check":"passed","science_source":ep["source"],"mp4":str(mp4.relative_to(ROOT)).replace("\\","/")}
     (OUT / "report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    used.add(ep["slug"].rsplit("-", 1)[0])
+    state_path.write_text(json.dumps(sorted(used), indent=2) + "\n", encoding="utf-8")
     shutil.rmtree(FRAMES)
     print(json.dumps({"video":str(mp4.relative_to(ROOT)).replace("\\","/"),"report":str(OUT/"report.json"),"title":ep["title"],"description":ep["description"],"tags":ep["tags"],"slug":ep["slug"],"duration":duration}, indent=2))
 
