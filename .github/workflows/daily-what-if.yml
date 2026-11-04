@@ -2,9 +2,6 @@ name: Daily What If video
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - README.md
   schedule:
     - cron: '30 3 * * *'
 
@@ -20,19 +17,33 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
+      - name: Skip dates already covered by verification uploads
+        id: guard
+        run: |
+          today=$(TZ=Asia/Kolkata date +%F)
+          if [ "$GITHUB_EVENT_NAME" = "schedule" ] && { [ "$today" = "2026-11-05" ] || [ "$today" = "2026-11-07" ]; }; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "A verified video is already scheduled for $today."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/checkout@v4
+        if: ${{ steps.guard.outputs.skip != 'true' }}
         with:
           ref: main
       - uses: actions/setup-python@v5
+        if: ${{ steps.guard.outputs.skip != 'true' }}
         with:
           python-version: '3.12'
       - name: Install free local renderer tools
+        if: ${{ steps.guard.outputs.skip != 'true' }}
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg espeak-ng fonts-dejavu-core
           python -m pip install --upgrade pip
           python -m pip install Pillow
       - name: Render and self-check episode
+        if: ${{ steps.guard.outputs.skip != 'true' }}
         id: render
         run: |
           python automation/render.py > /tmp/episode.json
@@ -42,14 +53,10 @@ jobs:
           echo "description=$(python -c 'import json; print(json.load(open("/tmp/episode.json"))["description"])')" >> "$GITHUB_OUTPUT"
           echo "slug=$(python -c 'import json; print(json.load(open("/tmp/episode.json"))["slug"])')" >> "$GITHUB_OUTPUT"
           echo "tags=$(python -c 'import json; print(json.dumps(json.load(open("/tmp/episode.json"))["tags"]))')" >> "$GITHUB_OUTPUT"
-          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
-            publish_at=$(TZ=Asia/Kolkata date -d "+2 days" '+%Y-%m-%dT18:00:00+05:30')
-          else
-            publish_at=$(TZ=Asia/Kolkata date '+%Y-%m-%dT18:00:00+05:30')
-          fi
-          echo "publish_at=$publish_at" >> "$GITHUB_OUTPUT"
+          echo "publish_at=$(TZ=Asia/Kolkata date '+%Y-%m-%dT18:00:00+05:30')" >> "$GITHUB_OUTPUT"
           echo "report_dir=outputs/$(TZ=Asia/Kolkata date +%F)" >> "$GITHUB_OUTPUT"
       - name: Push temporary MP4 and keep episode report
+        if: ${{ steps.guard.outputs.skip != 'true' }}
         id: push
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -77,6 +84,7 @@ jobs:
           test -n "$sha" -a "$sha" != null || { echo "Could not read temporary MP4 blob SHA"; exit 1; }
           echo "file_sha=$sha" >> "$GITHUB_OUTPUT"
       - name: Hand off to Make, then remove the temporary MP4
+        if: ${{ steps.guard.outputs.skip != 'true' }}
         env:
           MAKE_WEBHOOK_URL: ${{ secrets.MAKE_WEBHOOK_URL }}
           VIDEO_URL: ${{ steps.push.outputs.raw_url }}
