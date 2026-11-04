@@ -77,6 +77,31 @@ EPISODES = [
         ],
         "narration": "Tonight, the Moon disappears over the harbor. The ocean does not leap into the sky. The Sun still pulls on Earth's water. But the Moon's stronger tide-making pull is gone. Coastlines lose the familiar lunar rhythm over time. NASA explains the Moon makes bulges on both sides. The next high tide arrives. How high is it?",
     },
+
+    {
+        "slug": "venus-long-day",
+        "topic": "What if a day lasted 117 Earth days?",
+        "fact": "A solar day on Venus lasts about 117 Earth days.",
+        "source": "https://science.nasa.gov/venus/venus-facts/",
+        "beats": ["Sunrise reaches a roadside tea stall.", "On Venus, the Sun crawls across the sky.", "The planet turns slowly in the opposite direction.", "One solar day lasts about 117 Earth days.", "Morning can stretch on for weeks.", "NASA says a Venus day outlasts its year.", "What would you do with one endless day?"],
+        "narration": "Sunrise reaches a roadside tea stall. On Venus, the Sun crawls across the sky. The planet turns slowly in the opposite direction. One solar day lasts about 117 Earth days. Morning can stretch on for weeks. NASA says a Venus day outlasts its year. What would you do with one endless day?",
+    },
+    {
+        "slug": "mars-global-dust-storm",
+        "topic": "What if a dust storm covered Mars?",
+        "fact": "Global Martian dust storms can obscure the surface and reduce sunlight reaching solar-powered spacecraft.",
+        "source": "https://www.nasa.gov/solar-system/the-fact-and-fiction-of-martian-dust-storms/",
+        "beats": ["A red storm swallows the rover's horizon.", "Dust lifts until the sky turns opaque.", "Solar panels receive less sunlight.", "The rover enters a low-power wait.", "Days pass with no signal from the valley.", "NASA says global storms can end missions.", "What would you protect before the sky vanished?"],
+        "narration": "A red storm swallows the rover's horizon. Dust lifts until the sky turns opaque. Solar panels receive less sunlight. The rover enters a low-power wait, conserving every battery cell. Days pass with no signal from the valley. NASA says global storms can end missions. What would you protect before the sky vanished?",
+    },
+    {
+        "slug": "jupiter-great-red-spot",
+        "topic": "What if the Great Red Spot appeared above Earth?",
+        "fact": "Jupiter's Great Red Spot is a giant storm larger than Earth.",
+        "source": "https://science.nasa.gov/jupiter/jupiter-facts/",
+        "beats": ["A rust-red oval rises above the clouds.", "It is Jupiter's Great Red Spot.", "NASA says this storm is larger than Earth.", "Its winds circle a world made mostly of gas.", "It has raged for hundreds of years.", "The storm dwarfs every hurricane we know.", "How would you watch the sky tonight?"],
+        "narration": "A rust-red oval rises above the clouds. It is Jupiter's Great Red Spot. NASA says this storm is larger than Earth. Its winds circle a world made mostly of gas. It has raged for hundreds of years. The storm dwarfs every hurricane we know. How would you watch the sky tonight?",
+    },
 ]
 
 PLACES = ["a quiet kitchen", "a packed train station", "a rooftop at dusk", "an empty classroom", "a night market", "a seaside road", "a small apartment", "a crowded bridge", "a cricket ground", "a late-night diner", "a hilltop bus stop", "a flooded underpass", "a school playground", "a lighthouse balcony", "a sleeping suburb", "a busy airport", "a mountain village", "a city park", "a fishing pier", "a hospital corridor", "a train window", "a rooftop garden", "a silent library", "a desert road", "a glass office tower", "a harbor market", "a village well", "a cinema queue", "a roadside tea stall", "a ferry deck"]
