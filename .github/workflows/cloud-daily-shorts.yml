@@ -1,0 +1,111 @@
+name: Cloud WhatiflyHQ Shorts
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 09:00 Asia/Kolkata (03:30 UTC)
+    - cron: "30 3 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: whatifly-cloud-shorts
+  cancel-in-progress: false
+
+jobs:
+  render-and-schedule:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cloud-free-shorts-v1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install free cloud renderer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg espeak-ng fonts-dejavu-core
+          python -m pip install --upgrade pip
+          python -m pip install Pillow
+
+      - name: Render vertical Short (AI optional, template fallback)
+        id: render
+        env:
+          AI_API_URL: ${{ secrets.AI_API_URL }}
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+          AI_MODEL: ${{ secrets.AI_MODEL }}
+        run: |
+          python automation/cloud_render.py > /tmp/episode.json
+          cat /tmp/episode.json
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          e=json.load(open("/tmp/episode.json"))
+          for k in ("video","title","description","slug"):
+              print(f"{k}={e[k]}")
+          print("tags="+json.dumps(e["tags"]))
+          print("report_dir=outputs/"+__import__("datetime").datetime.now(__import__("datetime").timezone.utc).astimezone(__import__("datetime").timezone(__import__("datetime").timedelta(hours=5,minutes=30))).date().isoformat())
+          print("publish_at="+__import__("datetime").datetime.now(__import__("datetime").timezone.utc).astimezone(__import__("datetime").timezone(__import__("datetime").timedelta(hours=5,minutes=30))).strftime("%Y-%m-%dT18:00:00+05:30"))
+          PY
+
+      - name: Temporarily publish MP4 for Make to fetch
+        id: push
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VIDEO_PATH: ${{ steps.render.outputs.video }}
+          REPORT_DIR: ${{ steps.render.outputs.report_dir }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$VIDEO_PATH" "$REPORT_DIR/report.json" "$REPORT_DIR/episode.json" "$REPORT_DIR/storyboard.jpg" automation/used-premises.json
+          git commit -m "Render cloud vertical Short"
+          git push origin HEAD:cloud-free-shorts-v1
+          REPO_PATH="${VIDEO_PATH#./}"
+          echo "repo_path=$REPO_PATH" >> "$GITHUB_OUTPUT"
+          URL="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/cloud-free-shorts-v1/${REPO_PATH}"
+          for attempt in $(seq 1 12); do
+            code=$(curl --silent --output /dev/null --write-out '%{http_code}' "$URL")
+            if [ "$code" = 200 ]; then break; fi
+            sleep 3
+          done
+          test "$code" = 200 || { echo "Temporary video URL unavailable: HTTP $code"; exit 1; }
+          echo "raw_url=$URL" >> "$GITHUB_OUTPUT"
+          sha=$(curl --fail --silent --show-error -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/${REPO_PATH}?ref=cloud-free-shorts-v1" | jq -r .sha)
+          test -n "$sha" -a "$sha" != null || exit 1
+          echo "file_sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Send to Make for YouTube upload and scheduled publish
+        env:
+          MAKE_WEBHOOK_URL: ${{ secrets.MAKE_WEBHOOK_URL }}
+          VIDEO_URL: ${{ steps.push.outputs.raw_url }}
+          FILE_PATH: ${{ steps.push.outputs.repo_path }}
+          FILE_SHA: ${{ steps.push.outputs.file_sha }}
+          TITLE: ${{ steps.render.outputs.title }}
+          DESCRIPTION: ${{ steps.render.outputs.description }}
+          TAGS: ${{ steps.render.outputs.tags }}
+          SLUG: ${{ steps.render.outputs.slug }}
+          PUBLISH_AT: ${{ steps.render.outputs.publish_at }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          test -n "$MAKE_WEBHOOK_URL" || { echo "Set MAKE_WEBHOOK_URL in repository Actions secrets."; exit 1; }
+          jq -n --arg video_url "$VIDEO_URL" --arg repo_file_path "$FILE_PATH" \
+            --arg file_sha "$FILE_SHA" --arg title "$TITLE" --arg description "$DESCRIPTION" \
+            --arg episode_slug "$SLUG" --arg publish_at "$PUBLISH_AT" --argjson tags "$TAGS" \
+            '{video_url:$video_url,repo_file_path:$repo_file_path,file_sha:$file_sha,title:$title,description:$description,episode_slug:$episode_slug,publish_at:$publish_at,tags:$tags}' > /tmp/handoff.json
+          response=$(curl --fail --silent --show-error --max-time 180 -H 'Content-Type: application/json' --data-binary @/tmp/handoff.json "$MAKE_WEBHOOK_URL")
+          echo "$response"
+          test "$(echo "$response" | jq -r .status)" = scheduled || { echo "Make did not confirm YouTube scheduling; keeping MP4 for retry."; exit 1; }
+          video_id=$(echo "$response" | jq -r .video_id)
+          test -n "$video_id" -a "$video_id" != null || { echo "Make did not return YouTube video ID."; exit 1; }
+
+          # Delete only after Make confirms scheduling.
+          code=$(curl --silent --output /dev/null --write-out '%{http_code}' -X DELETE \
+            -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            --data "$(jq -n --arg sha "$FILE_SHA" '{message:"Remove temporary MP4 after scheduling",sha:$sha,branch:"cloud-free-shorts-v1"}')" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/${FILE_PATH}")
+          test "$code" = 200 || { echo "MP4 cleanup failed: HTTP $code"; exit 1; }
+          echo "Scheduled YouTube video $video_id; temporary MP4 removed."
