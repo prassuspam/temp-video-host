@@ -211,7 +211,7 @@ def main() -> None:
     if not shutil.which("espeak-ng") or not shutil.which("ffmpeg") or not shutil.which("ffprobe"):
         raise SystemExit("Required free render tools are missing: espeak-ng, ffmpeg, ffprobe.")
     narration = OUT / "voice.wav"
-    run("espeak-ng", "-v", "en-us", "-s", "155", "-w", str(narration), ep["narration"])
+    run("espeak-ng", "-v", "en-us", "-s", "185", "-w", str(narration), ep["narration"])
     # Seven animated shots, with the final image held to the exact 19-second master.
     scene_frames = round(SECONDS * FPS / len(ep["beats"]))
     for n in range(SECONDS * FPS):
