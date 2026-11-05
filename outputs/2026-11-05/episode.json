@@ -1,21 +1,21 @@
 {
-  "slug": "earth-stops-spinning-20261105",
-  "topic": "What if Earth stopped spinning at a night market?",
-  "fact": "Earth's surface at the equator rotates at about 1,675 kilometers per hour.",
-  "source": "https://www.nasa.gov/wp-content/uploads/2019/08/nosl-grc-ps-01960-rockets-rock-module.pdf",
+  "slug": "moon-disappears-20261105",
+  "topic": "What if the Moon disappeared tonight?",
+  "fact": "The Moon's gravity pulls Earth's oceans into tidal bulges on both the near and far sides.",
+  "source": "https://science.nasa.gov/moon/tides/",
   "beats": [
-    "At a night market, Earth stops spinning.",
-    "You, the air, and the ocean keep moving.",
-    "At the equator, the ground was racing east.",
-    "Loose things keep that motion as the crust stops.",
-    "The atmosphere and water become the bigger danger.",
-    "NASA gives the equator speed: 1,675 kilometers an hour.",
-    "Then Earth turns again. What is still standing?"
+    "Tonight, the Moon disappears over the harbor.",
+    "The ocean does not leap into the sky.",
+    "The Sun still pulls on Earth's water.",
+    "But the Moon's stronger tide-making pull is gone.",
+    "Coastlines lose the familiar lunar rhythm over time.",
+    "NASA explains the Moon makes bulges on both sides.",
+    "The next high tide arrives. How high is it?"
   ],
-  "narration": "At a night market, Earth stops spinning for one second. You, the air, and the ocean keep moving. At the equator, the ground was racing east. Loose things keep that motion as the crust stops. The atmosphere and water become the bigger danger. NASA gives the equator speed: 1,675 kilometers an hour. Then Earth turns again. What is still standing?",
+  "narration": "Tonight, the Moon disappears over the harbor. The ocean does not leap into the sky. The Sun still pulls on Earth's water. But the Moon's stronger tide-making pull is gone. Coastlines lose the familiar lunar rhythm over time. NASA explains the Moon makes bulges on both sides. The next high tide arrives. How high is it?",
   "place": "a night market",
-  "title": "What if Earth stopped spinning at a night market? #shorts",
-  "description": "What if Earth stopped spinning at a night market? A quick WhatiflyHQ thought experiment. Science source: https://www.nasa.gov/wp-content/uploads/2019/08/nosl-grc-ps-01960-rockets-rock-module.pdf #shorts",
+  "title": "What if the Moon disappeared tonight? #shorts",
+  "description": "What if the Moon disappeared tonight? A WhatiflyHQ science thought experiment. Source: https://science.nasa.gov/moon/tides/ #shorts",
   "tags": [
     "What If",
     "WhatiflyHQ",
@@ -25,8 +25,9 @@
   ],
   "science": [
     {
-      "claim": "Earth's surface at the equator rotates at about 1,675 kilometers per hour.",
-      "source": "https://www.nasa.gov/wp-content/uploads/2019/08/nosl-grc-ps-01960-rockets-rock-module.pdf"
+      "claim": "The Moon's gravity pulls Earth's oceans into tidal bulges on both the near and far sides.",
+      "source": "https://science.nasa.gov/moon/tides/"
     }
-  ]
+  ],
+  "ai_mode": "curated-fallback"
 }
